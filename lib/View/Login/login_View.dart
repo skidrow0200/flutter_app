@@ -86,12 +86,12 @@ class _LoginViewState extends State<LoginView> {
   _launchWithMetamask() async {
     try {
       await _getUri();
-      launchUrlString(_appUri, mode: LaunchMode.externalApplication);
+      await launchUrlString(_appUri, mode: LaunchMode.externalApplication);
 
       _session = await _response.session.future;
 
       _signClient.onSessionConnect.subscribe((SessionConnect? session) async {
-        launchUrlString(_appUri, mode: LaunchMode.externalApplication);
+       await launchUrlString(_appUri, mode: LaunchMode.externalApplication);
 
         _accountAddress = session?.session.namespaces['eip155']?.accounts[0].substring(9);
         debugPrint("Account Address $_accountAddress");
