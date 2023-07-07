@@ -160,101 +160,99 @@ class _LoginViewState extends State<LoginView> {
       );
     } else {
       return Scaffold(
-        body: GestureDetector(
-          onTap: _handleTap,
-          child: Stack(
-            children: [
-              Container(
-                height: MediaQuery.of(context).size.height,
-                width: MediaQuery.of(context).size.width,
-                decoration: BoxDecoration(
-                    image: DecorationImage(
-                  image: AssetImage(AppImages.newbg),
-                  fit: BoxFit.fill,
-                )),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 30),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 40),
-                        child: Image.asset(
-                          AppImages.logoname,
-                          width: 150,
-                        ),
+        body: Stack(
+          children: [
+            Container(
+              height: MediaQuery.of(context).size.height,
+              width: MediaQuery.of(context).size.width,
+              decoration: BoxDecoration(
+                  image: DecorationImage(
+                image: AssetImage(AppImages.newbg),
+                fit: BoxFit.fill,
+              )),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 30),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 40),
+                      child: Image.asset(
+                        AppImages.logoname,
+                        width: 150,
                       ),
-                      Align(
-                        alignment: Alignment.bottomCenter,
-                        child: Column(
-                          children: [
-                            GradientTextWidget(
-                              size: 25,
-                              text: 'Login',
-                            ),
-                            CustomSizedBoxHeight(height: 20.h),
-                            CustomText(
-                              textStyle: AppStyle.textStyle13Regular,
-                              title:
-                                  'This party’s just getting started! Sign in to\n join the fun. ',
-                              textAlign: TextAlign.center,
-                              maxline: 2,
-                            ),
-                            CustomSizedBoxHeight(height: 20),
-                            CustomButton(
-                                width: double.infinity,
-                                ontap: () => _launchWithMetamask(),
-                                image: AppImages.metamask,
-                                title: 'MetaMask',
-                                AppStyle: AppStyle.textStyle14whiteSemiBold,
-                                // color: AppColors.mainColor,
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    AppColors.mainColor.withOpacity(0.4),
-                                    AppColors.indigo.withOpacity(0.4),
-                                    AppColors.indigo.withOpacity(0.4),
-                                  ],
-                                )),
-                            CustomSizedBoxHeight(height: 20.h),
-                            CustomButton(
-                                width: double.infinity,
-                                ontap: () => _launchWithWalletConnect(),
-                                AppStyle: AppStyle.textStyle14whiteSemiBold,
-                                image: AppImages.walletconnectpng,
-                                title: 'WalletConnect',
-                                // color: AppColors.mainColor,
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    AppColors.mainColor.withOpacity(0.4),
-                                    AppColors.indigo.withOpacity(0.4),
-                                    AppColors.indigo.withOpacity(0.4),
-                                  ],
-                                )),
-                            CustomSizedBoxHeight(height: 20.h),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
+                    ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Column(
+                        children: [
+                          GradientTextWidget(
+                            size: 25,
+                            text: 'Login',
+                          ),
+                          CustomSizedBoxHeight(height: 20.h),
+                          CustomText(
+                            textStyle: AppStyle.textStyle13Regular,
+                            title:
+                                'This party’s just getting started! Sign in to\n join the fun. ',
+                            textAlign: TextAlign.center,
+                            maxline: 2,
+                          ),
+                          CustomSizedBoxHeight(height: 20),
+                          CustomButton(
+                              width: double.infinity,
+                              ontap: () => _launchWithMetamask(),
+                              image: AppImages.metamask,
+                              title: 'MetaMask',
+                              AppStyle: AppStyle.textStyle14whiteSemiBold,
+                              // color: AppColors.mainColor,
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  AppColors.mainColor.withOpacity(0.4),
+                                  AppColors.indigo.withOpacity(0.4),
+                                  AppColors.indigo.withOpacity(0.4),
+                                ],
+                              )),
+                          CustomSizedBoxHeight(height: 20.h),
+                          CustomButton(
+                              width: double.infinity,
+                              ontap: () => _launchWithWalletConnect(),
+                              AppStyle: AppStyle.textStyle14whiteSemiBold,
+                              image: AppImages.walletconnectpng,
+                              title: 'WalletConnect',
+                              // color: AppColors.mainColor,
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  AppColors.mainColor.withOpacity(0.4),
+                                  AppColors.indigo.withOpacity(0.4),
+                                  AppColors.indigo.withOpacity(0.4),
+                                ],
+                              )),
+                          CustomSizedBoxHeight(height: 20.h),
+                        ],
+                      ),
+                    )
+                  ],
                 ),
               ),
-              if (_isModalVisible)
-                BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-                  child: Center(
-                    child: WalletConnectModal(
-                      uri: _appUri,
-                      launchWallet: _launchWithMetamask,
-                    ),
+            ),
+            if (_isModalVisible)
+              BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                child: Center(
+                  child: WalletConnectModal(
+                    uri: _appUri,
+                    launchWallet: _launchWithMetamask,
+                    closeBehavior: _handleTap,
                   ),
-                )
-            ],
-          ),
+                ),
+              )
+          ],
         ),
       );
     }
