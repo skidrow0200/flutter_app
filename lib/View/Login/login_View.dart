@@ -249,6 +249,7 @@ class _LoginViewState extends State<LoginView> {
                   child: Center(
                     child: WalletConnectModal(
                       uri: _appUri,
+                      launchWallet: _launchWithMetamask,
                     ),
                   ),
                 )
