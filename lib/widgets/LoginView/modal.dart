@@ -40,29 +40,3 @@ class _WalletConnectModalState extends State<WalletConnectModal> {
     );
   }
 }
-
-// Column(
-// mainAxisAlignment: MainAxisAlignment.center,
-// children: [
-// Padding(
-// padding: EdgeInsets.fromLTRB(0, 10, 0, 10),
-// child: Container(
-// decoration: BoxDecoration(
-// borderRadius: BorderRadius.circular(10),
-// color: Color(0XFF808080),
-// ),
-// height: 0.04 * height,
-// width: 0.5 * width,
-// child: Row(
-// mainAxisAlignment: MainAxisAlignment.spaceBetween,
-// children: [
-// Text("Mobile"),
-// Text("QRCode")
-// ],
-// ),
-// ),
-// ),
-// Text("Connect to Mobile Wallet"),
-// Flexible(
-// flex: 3,
-// child:
