@@ -1,5 +1,3 @@
-import 'dart:convert';
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -9,9 +7,6 @@ import 'package:cratch/Utils/color_constant.dart';
 import 'package:cratch/Utils/image_constant.dart';
 import 'package:cratch/widgets/Sizebox/sizedboxheight.dart';
 import 'package:cratch/widgets/customtext.dart';
-import 'package:get/get.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:http/http.dart' as http;
 import '../../widgets/GradientTextWidget.dart';
 import '../../widgets/customButton.dart';
 import 'package:cratch/widgets/LoginView/modal.dart';
@@ -28,13 +23,20 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   bool _isModalVisible = false;
-  var _Appuri, _session, signClient, response;
+  bool _isReady = false;
+
+  late SignClient _signClient;
+  late ConnectResponse _response;
+  late String _appUri;
+  late SessionData _session;
+  late String? _accountAddress;
+  late dynamic _signature;
 
   void _toggleModalVisibility() {
     setState(() {
       _isModalVisible = !_isModalVisible;
     });
-  }
+  } // Toggles the visibility of the modal
 
   void _handleTap() {
     if (_isModalVisible) {
@@ -42,96 +44,150 @@ class _LoginViewState extends State<LoginView> {
         _isModalVisible = false;
       });
     }
-  }
+  } // Handles the modal visibility based on where the user is tapping
 
-  SignInstanceCreate() async {
-    signClient = await SignClient.createInstance(
-      projectId: '15faabd2ceb2a486be25c61d1b5a587a',
-      metadata: const PairingMetadata(
-        name: 'Cratch',
-        description: 'A dapp that can request that transactions be signed',
-        url: 'https://walletconnect.com',
-        icons: ['https://avatars.githubusercontent.com/u/37784886'],
-      ),
-    );
-  }
-  
-  getUri() async{
-    response = await signClient.connect(requiredNamespaces: {
-      'eip155': const RequiredNamespace(
-          chains: ['eip155:1'], // Ethereum chain
-          methods: ['personal_sign'], // Requestable Methods
-          events: []),
-    });
+  _signInstanceCreate() async {
+    try {
+      _signClient = await SignClient.createInstance(
+        projectId: '15faabd2ceb2a486be25c61d1b5a587a',
+        metadata: const PairingMetadata(
+          name: 'Cratch',
+          description: 'A dapp that can request that transactions be signed',
+          url: 'https://walletconnect.com',
+          icons: ['https://avatars.githubusercontent.com/u/37784886'],
+        ),
+      );
+    } catch (exp) {
+      debugPrint("$exp");
+    }
+  } // Creates the signClient for the dapp to use
 
-    Uri? uri = response.uri;
-    _Appuri = uri.toString();
-  }
+  _getUri() async {
+    try {
+      _response = await _signClient.connect(requiredNamespaces: {
+        'eip155': const RequiredNamespace(
+            chains: [
+              'eip155:1'
+            ], // Ethereum chain
+            methods: [
+              'eth_signTransaction',
+              'personal_sign'
+            ], // Requestable Methods
+            events: []),
+      });
 
-  launchWithMetamask(BuildContext context) async {
-    await getUri();
-    await launchUrlString(_Appuri, mode: LaunchMode.externalApplication);
+      Uri? uri = _response.uri;
+      _appUri = uri.toString();
+    } catch (exp) {
+      debugPrint("$exp");
+    }
+  } // Generates the uri from the signClient instance
 
-    _session = await response.session.future;
+  _launchWithMetamask() async {
+    try {
+      await _getUri();
+      await launchUrlString(_appUri, mode: LaunchMode.externalApplication);
 
-    signClient.onSessionConnect.subscribe((SessionConnect? session) {
-      print(session);
-    });
-  }
-  
-  launchWithWalletConnect(BuildContext context) async{
-    await getUri();
-    _toggleModalVisibility();
-    
-    _session = await response.session.future;
+      _session = await _response.session.future;
 
-    if(_session != null) _toggleModalVisibility();
+      _signClient.onSessionConnect.subscribe((SessionConnect? session) async {
+        _accountAddress =
+            session?.session.namespaces['eip155']?.accounts[0].substring(9);
+        debugPrint("Account Address $_accountAddress");
 
-    signClient.onSessionConnect.subscribe((SessionConnect? session) {
-      print(session);
-    });
-  }
+        launchUrlString(_appUri, mode: LaunchMode.externalApplication);
+
+        await _signRequest();
+      });
+    } catch (exp) {
+      debugPrint("$exp");
+    }
+  } // Used to authenticate and sign with metamask
+
+  _launchWithWalletConnect() async {
+    try {
+      await _getUri();
+      _toggleModalVisibility();
+
+      _session = await _response.session.future;
+
+      _signClient.onSessionConnect.subscribe((SessionConnect? session) async {
+        _toggleModalVisibility();
+
+        _accountAddress =
+            session?.session.namespaces['eip155']?.accounts[0].substring(9);
+        debugPrint("Account Address $_accountAddress");
+
+        await _signRequest();
+      });
+    } catch (exp) {
+      debugPrint("$exp");
+    }
+  } // Used to authenticate and sign with walletConnect
+
+  _signRequest() async {
+    try {
+      _signature = await _signClient.request(
+        topic: _session.topic,
+        chainId: 'eip155:1',
+        request: SessionRequestParams(method: 'personal_sign', params: [
+          '5468697320697320666f7220766572696669636174696f6e',
+          _accountAddress
+        ]),
+      );
+      debugPrint("Signature $_signature");
+    } catch (exp) {
+      debugPrint("$exp");
+    }
+  } // Used to sign a message for verification
 
   @override
-  void initState(){
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await SignInstanceCreate();
-      setState(() { });
+  void initState() {
+    super.initState();
+    _signInstanceCreate().then((_) {
+      setState(() {
+        _isReady = true;
+      });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: GestureDetector(
-        onTap: _handleTap,
-        child: Stack(
-          children: [
-            Container(
-              height: MediaQuery.of(context).size.height,
-              width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(
-                  image: DecorationImage(
-                image: AssetImage(AppImages.newbg),
-                fit: BoxFit.fill,
-              )),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 40),
-                      child: Image.asset(
-                        AppImages.logoname,
-                        width: 150,
+    if (!_isReady) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    } else {
+      return Scaffold(
+        body: GestureDetector(
+          onTap: _handleTap,
+          child: Stack(
+            children: [
+              Container(
+                height: MediaQuery.of(context).size.height,
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                    image: DecorationImage(
+                  image: AssetImage(AppImages.newbg),
+                  fit: BoxFit.fill,
+                )),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 30),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 40),
+                        child: Image.asset(
+                          AppImages.logoname,
+                          width: 150,
+                        ),
                       ),
-                    ),
-                    Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Column(
-                        children: [
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Column(
+                          children: [
                             GradientTextWidget(
                               size: 25,
                               text: 'Login',
@@ -147,7 +203,7 @@ class _LoginViewState extends State<LoginView> {
                             CustomSizedBoxHeight(height: 20),
                             CustomButton(
                                 width: double.infinity,
-                                ontap: () => {launchWithMetamask(context)},
+                                ontap: () => _launchWithMetamask(),
                                 image: AppImages.metamask,
                                 title: 'MetaMask',
                                 AppStyle: AppStyle.textStyle14whiteSemiBold,
@@ -164,9 +220,7 @@ class _LoginViewState extends State<LoginView> {
                             CustomSizedBoxHeight(height: 20.h),
                             CustomButton(
                                 width: double.infinity,
-                                ontap: () => {
-                                  launchWithWalletConnect(context)
-                                },
+                                ontap: () => _launchWithWalletConnect(),
                                 AppStyle: AppStyle.textStyle14whiteSemiBold,
                                 image: AppImages.walletconnectpng,
                                 title: 'WalletConnect',
@@ -182,30 +236,28 @@ class _LoginViewState extends State<LoginView> {
                                 )),
                             CustomSizedBoxHeight(height: 20.h),
                           ],
-                      ),
-                    )
-                  ],
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               ),
-            ),
-            if(_isModalVisible)
-              BackdropFilter(
-                filter: ImageFilter.blur(
-                  sigmaX: 5,
-                  sigmaY: 5
-                ),
-                child: Center(
-                  child: WalletConnectModal(uri: _Appuri,),
-                ),
-              )
-          ],
+              if (_isModalVisible)
+                BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                  child: Center(
+                    child: WalletConnectModal(
+                      uri: _appUri,
+                    ),
+                  ),
+                )
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 }
-
-
 
 // Future<void> _storeWalletAddress(String address, String token) async {
 //   final prefs = await SharedPreferences.getInstance();
