@@ -66,14 +66,14 @@ class _LoginViewState extends State<LoginView> {
     try {
       _response = await _signClient.connect(requiredNamespaces: {
         'eip155': const RequiredNamespace(
-            chains: [
-              'eip155:1'
-            ], // Ethereum chain
+            chains: [], // Ethereum chain
             methods: [
               'eth_signTransaction',
               'personal_sign'
             ], // Requestable Methods
-            events: []),
+            events: [],
+        ),
+
       });
 
       Uri? uri = _response.uri;
@@ -82,6 +82,13 @@ class _LoginViewState extends State<LoginView> {
       debugPrint("$exp");
     }
   } // Generates the uri from the signClient instance
+
+  getPos(str, subStr, i) {
+    print("String $str");
+    print("SubStr $subStr");
+    print("I $i");
+    return str.split(subStr).sublist(0,  2).join(subStr).length;
+  }
 
   _launchWithMetamask() async {
     try {
@@ -93,12 +100,14 @@ class _LoginViewState extends State<LoginView> {
       _signClient.onSessionConnect.subscribe((SessionConnect? session) async {
        await launchUrlString(_appUri, mode: LaunchMode.externalApplication);
 
-        _accountAddress = session?.session.namespaces['eip155']?.accounts[0].substring(9);
+       var chain = session?.session.namespaces['eip155']?.accounts[0].substring(0, getPos(session?.session.namespaces['eip155']?.accounts[0], ':', 2));
+       debugPrint("Chain $chain");
+        _accountAddress = session?.session.namespaces['eip155']?.accounts[0].substring(getPos(session?.session.namespaces['eip155']?.accounts[0], ':', 2) + 1);
         debugPrint("Account Address $_accountAddress");
 
         // launchUrlString(_appUri, mode: LaunchMode.externalApplication);
 
-        await _signRequest();
+        await _signRequest(chain);
       });
     } catch (exp) {
       debugPrint("$exp");
@@ -111,26 +120,28 @@ class _LoginViewState extends State<LoginView> {
       _toggleModalVisibility();
 
       _session = await _response.session.future;
-
+      debugPrint("Session $_session");
       _signClient.onSessionConnect.subscribe((SessionConnect? session) async {
         _toggleModalVisibility();
 
+        var chain = session?.session.namespaces['eip155']?.accounts[0].substring(0, getPos(session?.session.namespaces['eip155']?.accounts[0], ':', 2));
+        debugPrint("Chain $chain");
         _accountAddress =
-            session?.session.namespaces['eip155']?.accounts[0].substring(9);
+            session?.session.namespaces['eip155']?.accounts[0].substring(getPos(session?.session.namespaces['eip155']?.accounts[0], ':', 2) + 1);
         debugPrint("Account Address $_accountAddress");
 
-        await _signRequest();
+        await _signRequest(chain);
       });
     } catch (exp) {
       debugPrint("$exp");
     }
   } // Used to authenticate and sign with walletConnect
 
-  _signRequest() async {
+  _signRequest(chain) async {
     try {
       _signature = await _signClient.request(
         topic: _session.topic,
-        chainId: 'eip155:1',
+        chainId: chain,
         request: SessionRequestParams(method: 'personal_sign', params: [
           '5468697320697320666f7220766572696669636174696f6e',
           _accountAddress
